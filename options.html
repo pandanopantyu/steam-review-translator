@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Steamテキスト翻訳 - 設定</title>
+  <link rel="stylesheet" href="options.css">
+  <script src="options.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Steamテキスト翻訳</h1>
+    <p>Gemini APIキーを設定してください。翻訳したい文章のリンクをクリックしたときだけAPIを呼び出します。</p>
+    <section>
+      <h2>Gemini APIキー</h2>
+      <label for="apiKey">APIキー</label>
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="Google AI Studioで取得したGemini APIキー">
+      <div class="buttons">
+        <button id="saveKey" type="button">保存</button>
+        <button id="testKey" type="button">接続テスト</button>
+        <button id="deleteKey" type="button" class="secondary">キーを削除</button>
+      </div>
+      <p class="hint">キーはこのブラウザの拡張機能ストレージに保存します。ソースコードやSteamページには書き込みません。</p>
+      <p id="keyStatus" role="status" aria-live="polite"></p>
+    </section>
+    <section>
+      <h2>翻訳キャッシュ</h2>
+      <p>同じ本文の再翻訳を避けるため、最大200件を90日間保存します。</p>
+      <button id="clearCache" type="button" class="secondary">翻訳キャッシュを削除</button>
+      <p id="cacheStatus" role="status" aria-live="polite"></p>
+    </section>
+    <p class="footnote"><a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" rel="noopener noreferrer">Google公式：Gemini APIキー</a></p>
+  </main>
+</body>
+</html>

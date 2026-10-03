@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Steamテキスト Gemini日本語翻訳",
+  "version": "1.1.5",
+  "description": "Steamのレビュー、コミュニティ投稿、ガイド、ゲーム説明文をクリック時にGeminiで翻訳します。",
+  "permissions": ["storage"],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["https://store.steampowered.com/*", "https://steamcommunity.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ]
+}

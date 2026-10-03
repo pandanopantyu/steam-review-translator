@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<title>媒体保持のブラウザ検証（モック翻訳）</title>
+<link rel="stylesheet" href="/content.css">
+<style>
+  body { background: #1b2838; color: #acb2b8; font: 16px/1.5 sans-serif; margin: 24px auto; max-width: 850px; }
+  video { width: 420px; max-width: 100%; }
+  .bb_img_ctn { display: inline-block; position: relative; }
+  .bb_img_icons { position: absolute; top: 4px; right: 4px; }
+  [role="button"] { background: #16202d; cursor: pointer; padding: 4px; }
+  #results { background: #101822; padding: 12px; white-space: pre-wrap; }
+</style>
+<h1>媒体保持のブラウザ検証</h1>
+<p>Gemini APIは呼びません。Steamの公開動画をブラウザで読み込み、翻訳応答はモックします。</p>
+<pre id="results" role="status">検証中…</pre>
+<div id="game_area_description">
+  <h2>About This Game</h2>
+  <span class="bb_img_ctn">
+    <video class="bb_img" muted loop playsinline preload="auto">
+      <source src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/646570/extras/525fee3b3fedadeaa101f2abbcf8ffca.webm?t=1774015376" type="video/webm">
+      <source src="https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/646570/extras/525fee3b3fedadeaa101f2abbcf8ffca.mp4?t=1774015376" type="video/mp4">
+    </video>
+    <div class="bb_img_icons"><div class="bb_img_play_pause playing" role="button" tabindex="0">Pause animation</div></div>
+  </span><br>
+  We fused card games and roguelikes together. 🔥<br><br>
+  <h2><strong>Features</strong></h2>
+  <ul class="bb_ul">
+    <li><i>Dynamic Deck Building</i>: Choose your cards wisely!</li>
+    <li>Discover powerful relics.</li>
+  </ul>
+  <p>Play with friends.</p>
+</div>
+<script>
+  "use strict";
+  const requests = [];
+  const responses = new Map([
+    ["We fused card games and roguelikes together. 🔥", "カードゲームとローグライクを融合しました。🔥"],
+    ["Features", "特徴"],
+    ["Dynamic Deck Building: Choose your cards wisely!", "変化するデッキ構築：カードを賢く選びましょう！"],
+    ["Discover powerful relics.", "強力なレリックを発見しましょう。"],
+    ["Play with friends.", "友達と一緒に遊びましょう。"]
+  ]);
+  window.chrome ??= {};
+  let messageListener;
+  let apiRequests = 0;
+  const storageValues = new Map([["geminiApiKey", "browser-test-only-not-a-real-key"]]);
+  window.chrome.storage = { local: {
+    async get(keys) {
+      const names = keys === null ? Array.from(storageValues.keys()) : Array.isArray(keys) ? keys : [keys];
+      return Object.fromEntries(names.filter(key => storageValues.has(key)).map(key => [key, storageValues.get(key)]));
+    },
+    async set(entries) { for (const [key, value] of Object.entries(entries)) storageValues.set(key, value); },
+    async remove(keys) { for (const key of Array.isArray(keys) ? keys : [keys]) storageValues.delete(key); }
+  } };
+  window.chrome.runtime = {
+    lastError: null,
+    onMessage: { addListener(listener) { messageListener = listener; } },
+    getURL(file) { return `chrome-extension://browser-check/${file}`; },
+    sendMessage(message, callback) {
+      requests.push(message.texts || [message.text]);
+      // 実際のbackground.jsへ渡し、送信元と拡張機能ストレージだけをモックする。
+      messageListener(message, { url: "https://store.steampowered.com/app/646570/" }, callback);
+    }
+  };
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (url, options) => {
+    if (!String(url).startsWith("https://generativelanguage.googleapis.com/")) return nativeFetch(url, options);
+    apiRequests += 1;
+    const data = JSON.parse(JSON.parse(options.body).contents[0].parts[0].text);
+    const translate = text => responses.get(text) || "更新された文章の日本語訳です。";
+    const text = JSON.stringify({
+      translations: data.source_texts.map(item => ({ id: item.id, text: translate(item.text) }))
+    });
+    return new Response(JSON.stringify({ candidates: [{ finishReason: "STOP", content: { parts: [{ text }] } }] }),
+      { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+  const video = document.querySelector("video");
+  const originalWrapper = video.parentElement;
+  const originalPause = document.querySelector(".bb_img_play_pause");
+  const originalItalic = document.querySelector("li i");
+  const sources = Array.from(video.children);
+  let pauseClicks = 0;
+  let emptied = 0;
+  video.addEventListener("emptied", () => { emptied += 1; });
+  originalPause.addEventListener("click", () => {
+    pauseClicks += 1;
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  });
+  const checks = [];
+  function check(label, condition) {
+    checks.push(`${condition ? "PASS" : "FAIL"}: ${label}`);
+    if (!condition) throw new Error(label);
+  }
+  const tick = () => new Promise(resolve => setTimeout(resolve, 350));
+  const visible = node => {
+    for (let current = node; current; current = current.parentElement) {
+      if (getComputedStyle(current).display === "none") return false;
+    }
+    return true;
+  };
+</script>
+<script src="/background.js"></script>
+<script src="/content.js"></script>
+<script>
+  async function verify() {
+    const description = document.getElementById("game_area_description");
+    const actions = Array.from(description.querySelectorAll(".srt-controls > a:first-child"));
+    check("媒体の検出だけでは翻訳要求を送らない", requests.length === 0);
+    check("本文全体の操作リンクを1個だけ表示", actions.length === 1);
+    check("説明欄の見出し直後に操作リンクを表示", description.querySelector("h2").nextElementSibling.classList.contains("srt-controls"));
+    // 媒体のダウンロードを無期限に待たず、読めた場合だけ実再生を検証する。
+    let playable = video.readyState >= 2;
+    if (!playable) {
+      playable = await Promise.race([
+        new Promise(resolve => video.addEventListener("loadeddata", () => resolve(true), { once: true })),
+        new Promise(resolve => setTimeout(() => resolve(false), 7000))
+      ]);
+    }
+    if (playable) {
+      try { await video.play(); } catch { playable = false; }
+    }
+    const emptiedBefore = emptied;
+    for (const action of actions) action.click();
+    await tick();
+    check("1回のクリックで全文の文章だけを送る", requests.length === 1 && requests[0].length === 5 &&
+      requests[0].every(text => responses.has(text)));
+    check("実backgroundコードの一括生成リクエストも1回", apiRequests === 1);
+    check("翻訳後も同じ動画・SOURCE・再生ボタンを保持", video.parentElement === originalWrapper &&
+      video.children.length === sources.length && sources.every((source, index) => video.children[index] === source) &&
+      document.querySelector(".bb_img_play_pause") === originalPause);
+    check("翻訳後も動画と操作ボタンが表示される", visible(video) && visible(originalPause));
+    check("UL・LIとメイン見出しを維持", description.querySelectorAll("ul > li").length === 2 &&
+      description.querySelector("h2").textContent === "About This Game");
+    check("操作DIVをP/H2に入れない", !description.querySelector("p .srt-controls, h2 .srt-controls"));
+    check("分割した訳文をインラインで保ち、段落・見出しの構造を崩さない",
+      Array.from(description.querySelectorAll(".srt-media-translation")).every(node => getComputedStyle(node).display === "inline"));
+    check("元の動画を再ロードしない", emptied === emptiedBefore);
+    if (playable) {
+      const start = video.currentTime;
+      await tick();
+      check("翻訳後も動画の再生が進む", !video.paused && video.currentTime !== start);
+      originalPause.click();
+      check("元の一時停止イベントが動く", pauseClicks === 1 && video.paused);
+      originalPause.click();
+      await tick();
+      check("元の再生イベントが動く", pauseClicks === 2 && !video.paused);
+    } else {
+      checks.push("SKIP: 公開動画を再生できなかったため、実再生は未確認");
+      originalPause.click();
+      check("元の操作イベントを維持", pauseClicks === 1);
+    }
+    for (const action of actions) action.click();
+    check("原文と装飾ノードへ戻れる", visible(originalItalic) && originalItalic.textContent === "Dynamic Deck Building");
+    for (const action of actions) action.click();
+    await tick();
+    check("全文切り替えとMutationObserverで追加要求・重複を作らない", requests.length === 1 && apiRequests === 1 &&
+      description.querySelectorAll(".srt-controls").length === 1);
+    const newParagraph = document.createElement("p");
+    newParagraph.textContent = "Newly loaded text.";
+    description.append(newParagraph);
+    await tick();
+    check("動的な文章を一括対象に追加してもリンクは1個", description.querySelectorAll(".srt-controls").length === 1);
+    check("動的追加だけでAPIを呼ばない", requests.length === 1 && apiRequests === 1);
+    actions[0].click();
+    await tick();
+    check("旧部分のキャッシュを再利用して新しい文章も翻訳", apiRequests === 2 && requests[1].length === 6 &&
+      description.querySelectorAll(".srt-hidden").length === 6);
+    document.getElementById("results").textContent = `検証完了\n${checks.join("\n")}`;
+  }
+  verify().catch(error => {
+    document.getElementById("results").textContent = `検証失敗: ${error.message}\n${checks.join("\n")}`;
+  });
+</script>
+</html>

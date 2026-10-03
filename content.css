@@ -1,0 +1,75 @@
+.srt-controls {
+  display: block;
+  margin-top: 5px;
+  margin-bottom: 4px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  color: inherit;
+}
+
+.srt-controls a {
+  color: #66c0f4;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.srt-controls a:hover,
+.srt-controls a:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.srt-controls a[aria-disabled="true"] {
+  color: #8f98a0;
+  cursor: default;
+  pointer-events: none;
+}
+
+.srt-controls .srt-status {
+  margin-left: 8px;
+  color: #d6a07d;
+}
+
+.srt-controls a[hidden],
+.srt-controls[hidden],
+.srt-translation[hidden] {
+  display: none !important;
+}
+
+.srt-controls a.srt-settings { margin-left: 8px; }
+
+.srt-hidden { display: none !important; }
+
+.srt-translation {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  color: inherit;
+}
+
+.srt-text-forum-title,
+.srt-media-translation { display: inline; }
+
+.srt-community { margin-left: 0; }
+
+.srt-forum-title {
+  display: inline-block;
+  position: relative;
+  z-index: 3;
+  margin: 0 0 0 10px;
+  font-size: 11px;
+  vertical-align: baseline;
+}
+
+.srt-community-clipped {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  right: 10px;
+  bottom: 3px;
+  padding: 2px 0;
+  margin: 0;
+  background: #16202d;
+}

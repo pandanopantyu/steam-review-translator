@@ -1,0 +1,19 @@
+# APIキー・認証情報・ローカル設定は公開しない
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*api-key*.txt
+*api_key*.txt
+*test-key*.txt
+*secret*.txt
+*credentials*.json
+
+# 開発環境・生成物
+node_modules/
+coverage/
+*.log
+*.zip
+.DS_Store
+Thumbs.db
